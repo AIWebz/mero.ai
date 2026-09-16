@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mero — static preview</title>
+<meta name="description" content="A screenshot preview of Mero. This page is static; the real product is a live Next.js app and cannot run on GitHub Pages." />
+<style>
+  :root {
+    --background: #faf9f7;
+    --foreground: #14151a;
+    --surface: #ffffff;
+    --surface-muted: #f3f2ef;
+    --border: #e6e4de;
+    --muted: #6b6d76;
+    --accent: #1d4ed8;
+    --warning-bg: #fef3e2;
+    --warning-border: #f3d5a3;
+    --warning-text: #7a4a06;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: ui-sans-serif, -apple-system, "Inter", system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header .wordmark { font-weight: 600; font-size: 1.125rem; }
+  header a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+  header a:hover { color: var(--foreground); }
+  main { max-width: 880px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 2rem; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 12px; }
+  .lead { color: var(--muted); font-size: 1.05rem; max-width: 640px; }
+  .notice {
+    margin: 28px 0 44px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    color: var(--warning-text);
+    font-size: 0.9rem;
+  }
+  .notice strong { display: block; margin-bottom: 4px; color: inherit; }
+  .notice code {
+    background: rgba(0,0,0,0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+  .run-steps {
+    margin-top: 44px;
+    padding: 20px 22px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .run-steps h2 { font-size: 1rem; margin: 0 0 12px; }
+  .run-steps ol { margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.9rem; }
+  .run-steps li { margin-bottom: 6px; }
+  .run-steps code {
+    background: var(--surface-muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.85em;
+    color: var(--foreground);
+  }
+  section.shots { margin-top: 56px; }
+  .shot { margin-bottom: 48px; }
+  .shot h3 { font-size: 0.95rem; font-weight: 600; margin: 0 0 4px; }
+  .shot p { color: var(--muted); font-size: 0.875rem; margin: 0 0 12px; }
+  .shot img {
+    width: 100%;
+    display: block;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+  <header>
+    <span class="wordmark">Mero</span>
+    <a href="https://github.com/AIWebz/mero.ai/tree/claude/wizardly-noether-ydvfj2">View source on GitHub &rarr;</a>
+  </header>
+
+  <main>
+    <h1>Build a company. Let AI run it.</h1>
+    <p class="lead">
+      Mero turns an idea into a real business: a brand, a structurally-editable website, and an
+      AI workforce with explicit permissions that operates the company under the owner's
+      supervision.
+    </p>
+
+    <div class="notice">
+      <strong>This page is a static screenshot preview, not the live app.</strong>
+      Mero is a full server application — real login, a real database, and dozens of API routes
+      that do real work (AI generation, task execution, approvals). GitHub Pages only serves
+      static files, so it structurally cannot run any of that. What follows are real screenshots
+      from an actual running instance, walking through the product end to end.
+    </div>
+
+    <div class="run-steps">
+      <h2>Want to actually use it?</h2>
+      <ol>
+        <li>Clone the repo and check out <code>claude/wizardly-noether-ydvfj2</code></li>
+        <li><code>npm install</code></li>
+        <li><code>cp .env.example .env</code> and fill in <code>DATABASE_URL</code> / <code>AUTH_SECRET</code> (optionally <code>ANTHROPIC_API_KEY</code> for real AI generation)</li>
+        <li><code>npx prisma migrate dev</code></li>
+        <li><code>npm run dev</code> — open <code>http://localhost:3000</code></li>
+      </ol>
+    </div>
+
+    <section class="shots">
+      <div class="shot">
+        <h3>Landing page</h3>
+        <p>The marketing entry point — idea → build → workforce → run → optimize.</p>
+        <img src="images/landing.png" alt="Mero landing page" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Onboarding — reviewing the generated plan</h3>
+        <p>Every field is editable before the company is built. No AI provider was connected in this run, so it's honestly labeled as template-filled rather than pretending to be AI-generated.</p>
+        <img src="images/onboarding-review.png" alt="Onboarding review step" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Live build sequence</h3>
+        <p>Each step only checks off once the backend actually finishes it — real progress, not a timed animation.</p>
+        <img src="images/building.png" alt="Company build progress" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Overview dashboard</h3>
+        <p>Real AI CEO briefing generated from actual task/activity data, and metrics that show "connect your data sources" instead of fabricated numbers.</p>
+        <img src="images/overview.png" alt="Overview dashboard" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Workforce</h3>
+        <p>The AI employees Mero assembled for this specific business — not every role for every company.</p>
+        <img src="images/workforce.png" alt="Workforce page" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Employee chat</h3>
+        <p>Real chat backed by the AI provider abstraction. With no API key connected, it says so plainly instead of faking a reply.</p>
+        <img src="images/chat.png" alt="Employee chat, AI not connected" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Website builder</h3>
+        <p>A real page tree and live preview backed by the database, with an AI command box that edits the actual structure.</p>
+        <img src="images/website.png" alt="Website builder" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Knowledge</h3>
+        <p>Company memory the AI workforce actually reads from, editable by the owner.</p>
+        <img src="images/knowledge.png" alt="Knowledge page" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Integrations</h3>
+        <p>Every provider is honestly marked "Not connected" — no integration is faked.</p>
+        <img src="images/integrations.png" alt="Integrations page" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Global command bar</h3>
+        <p>⌘K routes natural-language commands through the AI CEO orchestrator.</p>
+        <img src="images/command-bar.png" alt="Command bar" loading="lazy" />
+      </div>
+
+      <div class="shot">
+        <h3>Settings</h3>
+        <p>Shows the real AI provider connection status — no hidden state.</p>
+        <img src="images/settings.png" alt="Settings page" loading="lazy" />
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Generated from an actual running instance of Mero &middot;
+    <a href="https://github.com/AIWebz/mero.ai/tree/claude/wizardly-noether-ydvfj2">github.com/AIWebz/mero.ai</a>
+  </footer>
+</body>
+</html>
