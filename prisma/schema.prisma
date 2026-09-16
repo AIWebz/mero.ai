@@ -1,0 +1,443 @@
+// Mero data model
+// SQLite for local/dev by default; swap the datasource to Postgres for production
+// by changing `provider` and `DATABASE_URL` — the schema itself is Postgres-compatible.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  memberships   CompanyMember[]
+  approvalsMade Approval[]      @relation("ApprovalDecidedBy")
+}
+
+// Many-to-many between users and companies, so a user can own/operate multiple companies.
+model CompanyMember {
+  id        String   @id @default(cuid())
+  role      String   @default("owner") // owner | admin | member
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Company
+// ---------------------------------------------------------------------------
+
+model Company {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  industry       String?
+  businessModel  String?
+  targetCustomer String?
+  domain         String?
+  status         String   @default("building") // building | active | paused
+  proposalJson   String   @default("{}") // the full generated CompanyProposal, kept so a failed build step can be safely retried
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  members        CompanyMember[]
+  settings       CompanySettings?
+  brand          Brand?
+  goals          Goal[]
+  employees      Employee[]
+  tasks          Task[]
+  approvals      Approval[]
+  activities     Activity[]
+  memoryEntries  CompanyMemory[]
+  knowledgeDocs  KnowledgeDocument[]
+  integrations   Integration[]
+  website        Website?
+  opportunities  Opportunity[]
+  auditLogs      AuditLog[]
+  conversations  Conversation[]
+  metricSnapshots MetricSnapshot[]
+  buildSteps     BuildStep[]
+}
+
+model CompanySettings {
+  id        String  @id @default(cuid())
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  aiAutonomyLevel String  @default("supervised") // supervised | autonomous_low_risk | autonomous_full
+  timezone        String  @default("UTC")
+  notifyEmail     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Brand {
+  id        String   @id @default(cuid())
+  companyId String   @unique
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  tone        String?
+  voice       String?
+  colorsJson  String   @default("[]") // JSON array of hex colors
+  logoText    String? // wordmark fallback until a real logo asset pipeline exists
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Goal {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  status      String   @default("active") // active | achieved | dropped
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+}
+
+// A step in the "creating your company" build sequence, persisted so progress is real,
+// resumable, and reflects actual backend completion (per product principle: no fake progress).
+model BuildStep {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  key       String   // e.g. understanding_idea, defining_customer, creating_brand...
+  label     String
+  status    String   @default("pending") // pending | running | completed | failed
+  error     String?
+  order     Int
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  @@unique([companyId, key])
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// AI Workforce
+// ---------------------------------------------------------------------------
+
+model Employee {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name        String  // e.g. "Marketing"
+  role        String  // e.g. "AI Marketing Manager"
+  kind        String  // ceo | sales | marketing | support | research | analyst | developer | operations
+  goal        String?
+  status      String  @default("active") // active | paused
+  schedule    String? // human-readable cadence, e.g. "Every morning at 8am"
+
+  permissionsJson String @default("{}") // JSON: { read_analytics, create_content, publish_content, spend_money, ... }
+  toolsJson       String @default("[]") // JSON array of tool ids this employee may use
+
+  tasksCompleted Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks         Task[]
+  activities    Activity[]
+  memoryEntries EmployeeMemory[]
+  conversations Conversation[]
+
+  @@index([companyId])
+}
+
+model EmployeeMemory {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([employeeId])
+}
+
+model Conversation {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  messages  Message[]
+
+  @@index([companyId])
+  @@index([employeeId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role      String // user | assistant
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+// ---------------------------------------------------------------------------
+// Work: tasks, approvals, activity, audit
+// ---------------------------------------------------------------------------
+
+model Task {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?
+  status      String   @default("pending") // pending | working | awaiting_approval | completed | failed | cancelled
+  priority    String   @default("normal")  // low | normal | high | urgent
+  result      String?
+
+  requiresApproval Boolean @default(false)
+
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  approval  Approval?
+  activities Activity[]
+
+  @@index([companyId])
+  @@index([employeeId])
+}
+
+model Approval {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  taskId String @unique
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  title       String
+  reason      String?
+  impact      String?
+  risk        String   @default("low") // low | medium | high
+  status      String   @default("pending") // pending | approved | rejected
+  decidedById String?
+  decidedBy   User?    @relation("ApprovalDecidedBy", fields: [decidedById], references: [id])
+  decidedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  summary   String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  actor     String   // employee name, "system", or user email
+  action    String
+  reason    String?
+  result    String   @default("success") // success | failure
+  metaJson  String   @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Memory & Knowledge
+// ---------------------------------------------------------------------------
+
+model CompanyMemory {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  key       String   // e.g. "brand_voice", "policy:returns"
+  category  String   @default("general") // general | policy | customer | decision | event
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, key])
+  @@index([companyId])
+}
+
+model KnowledgeDocument {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title     String
+  category  String   @default("general") // business_plan | marketing | sales | support | general
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Opportunities
+// ---------------------------------------------------------------------------
+
+model Opportunity {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title            String
+  description      String
+  estimatedValue   Float?
+  recommendedAction String?
+  status           String  @default("open") // open | reviewed | dismissed
+  createdAt        DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model MetricSnapshot {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  metric    String   // revenue | customers | leads | conversion_rate | traffic
+  value     Float
+  source    String   // which integration produced this
+  capturedAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Integrations
+// ---------------------------------------------------------------------------
+
+model Integration {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  provider  String   // gmail | outlook | stripe | shopify | google_analytics | search_console | google_drive | slack | crm | calendar | sms | phone
+  category  String   // communication | business | analytics | productivity
+  status    String   @default("not_connected") // not_connected | pending_auth | connected | error
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  credential IntegrationCredential?
+
+  @@unique([companyId, provider])
+  @@index([companyId])
+}
+
+// Kept separate from Integration so credential material can be handled/encrypted distinctly.
+model IntegrationCredential {
+  id            String      @id @default(cuid())
+  integrationId String      @unique
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  // In production these values must be encrypted at rest (e.g. via envelope encryption / KMS).
+  // No plaintext credentials are ever stored by the generator itself; this table stays empty
+  // until a real OAuth/token exchange happens.
+  encryptedPayload String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Website
+// ---------------------------------------------------------------------------
+
+model Website {
+  id        String   @id @default(cuid())
+  companyId String   @unique
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pages Page[]
+}
+
+model Page {
+  id        String   @id @default(cuid())
+  websiteId String
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  slug      String   // "/", "/about", "/contact"
+  title     String
+  seoTitle       String?
+  seoDescription String?
+  order     Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sections Section[]
+
+  @@unique([websiteId, slug])
+  @@index([websiteId])
+}
+
+model Section {
+  id     String @id @default(cuid())
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  kind        String // hero | features | about | products | contact_form | cta | text
+  order       Int
+  contentJson String // JSON: heading, body, items, imageAlt, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pageId])
+}

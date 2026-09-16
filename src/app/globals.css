@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --background: #faf9f7;
+  --foreground: #14151a;
+  --surface: #ffffff;
+  --surface-muted: #f3f2ef;
+  --border: #e6e4de;
+  --muted: #6b6d76;
+  --accent: #1d4ed8;
+  --accent-foreground: #ffffff;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #b91c1c;
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
